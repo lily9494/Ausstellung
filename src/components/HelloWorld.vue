@@ -20,7 +20,8 @@ export default {
       mouse :{ x:0, y:0 },
       raycaster:new THREE.Raycaster(),
      camera : new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 1, 5000),
-     navmesh:new THREE.Object3D()
+     navmesh:new THREE.Object3D(),
+     sceneMeshes: []
     }
    
   },
@@ -64,22 +65,28 @@ export default {
 				gltf.scene.traverse(function (child) {
         
     				if (child.isMesh){
-              // debugger
-						if (child.name=="navMesh_1"){
-              debugger
+      
+						if (child.name=="navMesh_1"  ){
+              
+              self.navmesh=child;
+              self.sceneMeshes.push(child);
+							child.material.transparent = true;
+							child.material.opacity =0.3;
               // let pathfinder = new Pathfinding();
               //  this.raycaster = new THREE.Raycaster();
-              self.navmesh=child;
               // const ZONE = 'Ausstellung';
-							child.material.transparent = true;
-							child.material.opacity = 0.5;
-							const mesh = new THREE.Mesh(child.geometry, new THREE.MeshBasicMaterial({ wireframe: true, color: 0x111111}));
-							mesh.position.copy(child.position);
-              // pathfinder.setZoneData(ZONE, Pathfinding.createZone(child.geometry));
-							// mesh.quaternion.copy(child.quaternion);
-							gltf.scene.add(mesh);
+							// const mesh = new THREE.Mesh(child.geometry, new THREE.MeshBasicMaterial({ wireframe: true, color: 0x111111}));
+							// mesh.position.copy(child.position);
+              // // pathfinder.setZoneData(ZONE, Pathfinding.createZone(child.geometry));
+							// // mesh.quaternion.copy(child.quaternion);
+							// gltf.scene.add(mesh);
 					
-						}else{
+						}
+            else if(child.name=="wall_1" ||child.name=="wall_2"){
+              self.navmesh=child;
+              self.sceneMeshes.push(child);
+            }
+            else{
 							child.castShadow = false;
 							child.receiveShadow = true;
 						}
@@ -87,28 +94,37 @@ export default {
 					}
 				})});
         
-      this.renderer.setAnimationLoop(this.animate)
+      // this.renderer.setAnimationLoop(this.animate)
     },
     raycast:function(e){
     
-    	debugger	
+    	// debugger	
+      let mousex=0;
 			this.mouse.x = ( e.clientX / window.innerWidth ) * 2 - 1;
 			this.mouse.y = - ( e.clientY / window.innerHeight ) * 2 + 1;
+      this.raycaster.ray.origin.copy( this.camera.position );
+this.camera.getWorldDirection( this.raycaster.ray.direction );
 
 			//2. set the picking ray from the camera position and mouse coordinates
 			this.raycaster.setFromCamera( this.mouse, this.camera );    
 
 			//3. compute intersections
-			const intersects = this.raycaster.intersectObject( this.navmesh );
-			
-			if (intersects.length>0){
-				const pt = intersects[0].point;
-				console.log(pt);
-			}		},
+			const intersects = this.raycaster.intersectObjects( this.sceneMeshes );
+		
+			if (intersects.length>0)
+      {
+       console.log(intersects[0])
+      }
+      else{
+       
+      }
+  
+    },
     animate:function(){
+      requestAnimationFrame(this.animate)
       this.controls.update(0.01);
       this.renderer.render(this.scene, this.camera);
-      this.renderer.domElement.addEventListener( 'click', this.raycast,false );
+      this.renderer.domElement.addEventListener( 'mousedown', this.raycast,false );
     }
   },
   mounted() {
