@@ -10,6 +10,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 // import { Pathfinding } from 'three-pathfinding';
+import { PointerLockControls } from '../scripts/pointerLocksControl.js';
 import {FirstPersonControls} from '../scripts/firstPerson';
 // import {FirstPersonControls} from 'https://cdn.skypack.dev/three@0.136/examples/jsm/controls/FirstPersonControls.js';
 
@@ -48,6 +49,8 @@ export default {
     
       document.body.appendChild(this.renderer.domElement);
 
+      this.lockControl=new PointerLockControls(this.camera, this.renderer.domElement);
+
       this.controls =  new FirstPersonControls(this.camera, this.renderer.domElement);
       this.controls.movementSpeed =  5;
       this.controls.lookSpeed = 0.01;
@@ -72,14 +75,6 @@ export default {
               self.sceneMeshes.push(child);
 							child.material.transparent = true;
 							child.material.opacity =0.3;
-              // let pathfinder = new Pathfinding();
-              //  this.raycaster = new THREE.Raycaster();
-              // const ZONE = 'Ausstellung';
-							// const mesh = new THREE.Mesh(child.geometry, new THREE.MeshBasicMaterial({ wireframe: true, color: 0x111111}));
-							// mesh.position.copy(child.position);
-              // // pathfinder.setZoneData(ZONE, Pathfinding.createZone(child.geometry));
-							// // mesh.quaternion.copy(child.quaternion);
-							// gltf.scene.add(mesh);
 					
 						}
             else if(child.name=="wall_1" ||child.name=="wall_2"){
@@ -94,7 +89,6 @@ export default {
 					}
 				})});
         
-      // this.renderer.setAnimationLoop(this.animate)
     },
     raycast:function(e){
     
@@ -102,17 +96,19 @@ export default {
       let mousex=0;
 			this.mouse.x = ( e.clientX / window.innerWidth ) * 2 - 1;
 			this.mouse.y = - ( e.clientY / window.innerHeight ) * 2 + 1;
-      this.raycaster.ray.origin.copy( this.camera.position );
-this.camera.getWorldDirection( this.raycaster.ray.direction );
+      this.raycaster.ray.origin.copy( this.controls.object.position );
+// this.camera.getWorldDirection( this.raycaster.ray.direction );
 
 			//2. set the picking ray from the camera position and mouse coordinates
 			this.raycaster.setFromCamera( this.mouse, this.camera );    
-
+      console.log(this.controls.object.position)
 			//3. compute intersections
 			const intersects = this.raycaster.intersectObjects( this.sceneMeshes );
 		
 			if (intersects.length>0)
       {
+        if(intersects[0].distance>5)
+        this.camera.lookAt( this.mouse );
        console.log(intersects[0])
       }
       else{
@@ -120,16 +116,33 @@ this.camera.getWorldDirection( this.raycaster.ray.direction );
       }
   
     },
+    raycastLock:function(){
+      //keine Unterschied bis jetzt mit firstperson
+      this.raycaster.ray.origin.copy( this.lockControl.getObject().position);
+      const intersects = this.raycaster.intersectObjects( this.sceneMeshes );
+      if (intersects.length>0)
+      {
+        if(intersects[0].distance<5)
+       console.log(intersects[0])
+      }
+      console.log(this.lockControl.getObject().position);
+      console.log(this.lockControl.isLocked)
+    },
     animate:function(){
       requestAnimationFrame(this.animate)
-      this.controls.update(0.01);
       this.renderer.render(this.scene, this.camera);
-      this.renderer.domElement.addEventListener( 'mousedown', this.raycast,false );
+      this.raycastLock();
+      // this.renderer.domElement.addEventListener( 'click', this.raycast,false );
+      this.controls.update(0.01); // das muss glaub ich abhängig von der Zeit sein(lockedControler)
     }
   },
   mounted() {
-      this.init();
-      this.animate();
+     
+    
+  },
+  created(){
+ this.init();
+ this.animate();
   }
 }
 </script>
