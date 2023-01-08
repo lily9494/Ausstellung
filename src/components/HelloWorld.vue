@@ -22,7 +22,8 @@
                 raycaster: new THREE.Raycaster(),
                 camera: new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 1, 5000),
                 navmesh: new THREE.Object3D(),
-                sceneMeshes: []
+                sceneMeshes: [],
+                collides: false,
             }
 
         },
@@ -91,41 +92,90 @@
                 });
 
             },
-            raycast: function (e) {
 
-                // debugger
-                let mousex = 0;
-                this.mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
-                this.mouse.y = - (e.clientY / window.innerHeight) * 2 + 1;
-                this.raycaster.ray.origin.copy(this.controls.object.position);
-                // this.camera.getWorldDirection( this.raycaster.ray.direction );
+            //calculate the collision of two objects
+            collision: function (object1, object2) {
+                const box1 = new THREE.Box3().setFromObject(object1);
+                const box2 = new THREE.Box3().setFromObject(object2);
+                return box1.intersectsBox(box2);
+            },
 
-                //2. set the picking ray from the camera position and mouse coordinates
+            //calculate the distance between two objects
+            distance: function (object1, object2) {
+                const box1 = new THREE.Box3().setFromObject(object1);
+                const box2 = new THREE.Box3().setFromObject(object2);
+                return box1.distanceToPoint(box2);
+            },
+
+            //detect the collision of the player with the scene
+            detectCollision: function () {
+                const self = this;
+                this.sceneMeshes.forEach(function (mesh) {
+                    if (self.collision(self.controls.getObject(), mesh)) {
+                        console.log("collision");
+                    }
+                })
+            },
+            //compute the object which is in front of the player
+            computeIntersections: function () {
                 this.raycaster.setFromCamera(this.mouse, this.camera);
-                console.log(this.controls.object.position)
-                //3. compute intersections
                 const intersects = this.raycaster.intersectObjects(this.sceneMeshes);
-
                 if (intersects.length > 0) {
-                    if (intersects[0].distance > 5)
-                        this.camera.lookAt(this.mouse);
-                    console.log(intersects[0])
+                    console.log(intersects[0].object.name);
                 }
-                else {
+            },
 
+            //compute the object which collides with the player
+            computeCollisions: function () {
+                const self = this;
+                this.sceneMeshes.forEach(function (mesh) {
+                    if (self.collision(self.controls.getObject(), mesh)) {
+                        console.log(mesh.name);
+                    }
+                })
+            },
+
+            raycast: function (e) {
+                debugger
+                var collisionResults = this.raycaster.intersectObjects(this.sceneMeshes, true);
+                if (collisionResults.length > 0 && collisionResults[0].distance < 3) {
+                    //stop the movement
+                    this.controls.moveForward = false;
+                    console.log(collisionResults[0].object.name);
+                    debugger
                 }
+                //// debugger
+                //let mousex = 0;
+                //this.mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+                //this.mouse.y = - (e.clientY / window.innerHeight) * 2 + 1;
+                //this.raycaster.ray.origin.copy(this.controls.object.position);
+                //// this.camera.getWorldDirection( this.raycaster.ray.direction );
+
+                ////2. set the picking ray from the camera position and mouse coordinates
+                //this.raycaster.setFromCamera(this.mouse, this.camera);
+                //console.log(this.controls.object.position)
+                ////3. compute intersections
+                //const intersects = this.raycaster.intersectObjects(this.sceneMeshes);
+
+                //if (intersects.length > 0) {
+                //    if (intersects[0].distance > 5)
+                //        this.camera.lookAt(this.mouse);
+                //    console.log(intersects[0])
+                //}
+                //else {
+
+                //}
 
             },
             raycastLock: function () {
-                //keine Unterschied bis jetzt mit firstperson
-                this.raycaster.ray.origin.copy(this.lockControl.getObject().position);
-                const intersects = this.raycaster.intersectObjects(this.sceneMeshes);
-                if (intersects.length > 0 && intersects[0].distance < 5) {
-                    var point = intersects[0].point;
-                    var dir = new THREE.Vector3();  
+                this.raycaster.setFromCamera(this.mouse, this.camera);
+                var collisionResults = this.raycaster.intersectObjects(this.sceneMeshes, true);
+                if (collisionResults.length > 0 && collisionResults[0].distance < 3) {
+                    var point = collisionResults[0].point;
+                    var dir = new THREE.Vector3();
                     dir.subVectors(this.camera.position, point).normalize();
                     this.camera.position.addScaledVector(dir, .1);
-                }
+                }  
             },
             animate: function () {
                 requestAnimationFrame(this.animate)
