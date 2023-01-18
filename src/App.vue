@@ -1,15 +1,15 @@
 <template>
-  
-  <HelloWorld msg="Virtuel Museum"/>
+
+  <exhibition msg="Virtuel Museum" />
 </template>
 
 <script>
-import HelloWorld from './components/HelloWorld.vue'
+import exhibition from './components/exhibition.vue'
 
 export default {
   name: 'App',
   components: {
-    HelloWorld
+    exhibition
   }
 }
 </script>
