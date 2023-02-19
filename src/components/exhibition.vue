@@ -23,6 +23,7 @@ export default {
             camera: new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 1, 5000),
             navmesh: new THREE.Object3D(),
             sceneMeshes: [],
+            artMeshes: [],
             collides: false,
         }
 
@@ -81,6 +82,9 @@ export default {
                         else if (child.name == "wall_1" || child.name == "wall_2") {
                             self.navmesh = child;
                             self.sceneMeshes.push(child);
+                        }
+                        else if(child.name.startsWith("art")){
+                            self.artMeshes.push(child);
                         }
                         else {
                             child.castShadow = false;
