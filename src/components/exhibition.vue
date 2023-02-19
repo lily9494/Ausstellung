@@ -79,7 +79,7 @@ export default {
                             child.material.opacity = 0.3;
 
                         }
-                        else if (child.name == "wall_1" || child.name == "wall_2") {
+                        else if (child.name == "wall_1" || child.name == "wall_2" || child.name == "wall_3") {
                             self.navmesh = child;
                             self.sceneMeshes.push(child);
                         }
@@ -201,14 +201,84 @@ export default {
         raycastLock: function () {
             this.raycaster.setFromCamera(this.mouse, this.camera);
             var collisionResults = this.raycaster.intersectObjects(this.sceneMeshes, true);
-            this.computeDistance();
+            // this.computeDistance();
+            // if (collisionResults.length > 0 && collisionResults[0].distance < 3) {
+            //     var point = collisionResults[0].point;
+            //     var dir = new THREE.Vector3();
+            //     console.log(point)
+            //     dir.subVectors(this.camera.position, point).normalize();
+            //     this.camera.position.addScaledVector(dir, 0.4);
+            // }
+
             if (collisionResults.length > 0 && collisionResults[0].distance < 3) {
                 var point = collisionResults[0].point;
+
+                var lng = collisionResults.length;
+                var biggestDistance = collisionResults[lng - 1].distance
+                var smallestDistance = collisionResults[0].distance
+
+
                 var dir = new THREE.Vector3();
-                console.log(point)
+                var subCam = new THREE.Vector3();
+                var subCamPoint = new THREE.Vector3();
+                var wrldDirection = new THREE.Vector3();
+                this.camera.getWorldDirection(wrldDirection);
+                subCam.subVectors(this.camera.position, wrldDirection).normalize();
+                subCamPoint.subVectors(this.camera.position, point);
                 dir.subVectors(this.camera.position, point).normalize();
-                this.camera.position.addScaledVector(dir, .5);
+                var angle = subCam.angleTo(dir);
+                // var dotResult = subCamPoint.dot(point);
+                // var angelsubCamPoint = subCamPoint.angleTo(this.camera.position);
+
+                if (lng > 5 && (biggestDistance - smallestDistance > 10) && subCamPoint.length() >= 1) {
+                    console.log(point);
+                    console.log(this.camera.position);
+                    console.log(wrldDirection);
+                    this.camera.position.addScaledVector(dir, 0.3);
+                    return
+                }
+                else if (angle > 1.60) {
+                    console.log(point);
+                    console.log(this.camera.position);
+                    console.log(wrldDirection);
+                    this.camera.position.addScaledVector(dir, 0.3);
+                }
+
+                else {
+
+                    if (biggestDistance - smallestDistance < 5)
+                        this.camera.position.addScaledVector(dir, 0.3);
+                    else {
+                        console.log(point);
+                        console.log(this.camera.position);
+                        console.log(wrldDirection);
+                        this.camera.position.addScaledVector(dir, -0.3);
+                    }
+
+                }
+
             }
+
+            // if (collisionResults.length > 0 && collisionResults[0].distance < 3) {
+            //     var point = collisionResults[0].point;
+            //     var dir = new THREE.Vector3();
+
+            //     var projectVector = new THREE.Vector3(this.camera.position.x, this.camera.position.y, this.camera.position.z);
+            //     projectVector.normalize();
+            //     var subPoint = new THREE.Vector3();
+            //     subPoint.subVectors(point, this.camera.position).normalize();
+            //     dir.subVectors(this.camera.position, point).normalize();
+            //     if (projectVector.dot(subPoint) > 0) {
+            //         console.log(point)
+            //         this.camera.position.addScaledVector(dir, .5);
+            //     }
+
+            //     else {
+            //         console.log(point)
+            //         this.camera.position.addScaledVector(dir, -0.5);
+            //     }
+
+            // }
         },
         animate: function () {
             requestAnimationFrame(this.animate)
