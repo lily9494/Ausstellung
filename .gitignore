@@ -125,3 +125,7 @@ dist
 .yarn/build-state.yml
 .yarn/install-state.gz
 .pnp.*
+/.vs/Ausstellung/FileContentIndex/552fb232-4869-4da9-aa6a-3cc81af674a4.vsidx
+/.vs/Ausstellung/FileContentIndex/071ee4c7-fe56-4939-ac1f-0f02e22ad2a5.vsidx
+/.vs/Ausstellung/config/applicationhost.config
+/.vs
