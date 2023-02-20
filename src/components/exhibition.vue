@@ -6,291 +6,234 @@
 </template>
 
 <script>
-import * as THREE from 'three';
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
-// import { Pathfinding } from 'three-pathfinding';
-import { PointerLockControls } from '../scripts/pointerLocksControl.js';
-import { FirstPersonControls } from '../scripts/firstPerson';
-// import {FirstPersonControls} from 'https://cdn.skypack.dev/three@0.136/examples/jsm/controls/FirstPersonControls.js';
+    import * as THREE from 'three';
+    import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
+    import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+    // import { Pathfinding } from 'three-pathfinding';
+    import { PointerLockControls } from '../scripts/pointerLocksControl.js';
+    import { FirstPersonControls } from '../scripts/firstPerson';
+    // import {FirstPersonControls} from 'https://cdn.skypack.dev/three@0.136/examples/jsm/controls/FirstPersonControls.js';
 
-export default {
-    name: 'threejs',
-    data () {
-        return {
-            mouse: { x: 0, y: 0 },
-            raycaster: new THREE.Raycaster(),
-            camera: new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 1, 5000),
-            navmesh: new THREE.Object3D(),
-            sceneMeshes: [],
-            collides: false,
-        }
+    export default {
+        name: 'threejs',
+        data() {
+            return {
+                mouse: { x: 0, y: 0 },
+                raycaster: new THREE.Raycaster(),
+                camera: new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 1, 5000),
+                navmesh: new THREE.Object3D(),
+                sceneMeshes: [],
+                collides: false,
+            }
 
-    },
-    props: {
-        msg: String
-    },
-    methods: {
-        init: function () {
-            this.scene = new THREE.Scene();
-            this.scene.background = new THREE.Color(0xdddddd);
-            // this.pathfinder = new Pathfinding();
+        },
+        props: {
+            msg: String
+        },
+        methods: {
+            init: function () {
+                this.scene = new THREE.Scene();
+                this.scene.background = new THREE.Color(0xdddddd);
+                // this.pathfinder = new Pathfinding();
 
-            // this.camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 1, 5000);
-            this.camera.rotation.y = 10 / 180 * Math.PI;
-            this.camera.position.x = 15;
-            this.camera.position.y = 3;
-            this.camera.position.z = 20;
-            // this.camera.lookAt(this.scene.position);
+                // this.camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 1, 5000);
+                this.camera.rotation.y = 10 / 180 * Math.PI;
+                this.camera.position.x = 15;
+                this.camera.position.y = 3;
+                this.camera.position.z = 20;
+                // this.camera.lookAt(this.scene.position);
 
-            this.renderer = new THREE.WebGLRenderer({ antialias: true });
-            this.renderer.setSize(window.innerWidth, window.innerHeight);
-            this.renderer.outputEncoding = THREE.sRGBEncoding;
-            this.renderer.physicallyCorrectLights = true;
+                this.renderer = new THREE.WebGLRenderer({ antialias: true });
+                this.renderer.setSize(window.innerWidth, window.innerHeight);
+                this.renderer.outputEncoding = THREE.sRGBEncoding;
+                this.renderer.physicallyCorrectLights = true;
 
-            document.body.appendChild(this.renderer.domElement);
+                document.body.appendChild(this.renderer.domElement);
 
-            this.lockControl = new PointerLockControls(this.camera, this.renderer.domElement);
+                this.lockControl = new PointerLockControls(this.camera, this.renderer.domElement);
 
-            this.controls = new FirstPersonControls(this.camera, this.renderer.domElement);
-            this.controls.movementSpeed = 5;
-            this.controls.lookSpeed = 0.01;
-            this.controls.noFly = false;
-            this.controls.lookVertical = false;
-
-
-            this.hlight = new THREE.AmbientLight(0xffffff, 3);;
-            this.scene.add(this.hlight);
-            let loader = new GLTFLoader();
-            loader.load("/ShowRoom121122.glb", (gltf) => {
+                this.controls = new FirstPersonControls(this.camera, this.renderer.domElement);
+                this.controls.movementSpeed = 5;
+                this.controls.lookSpeed = 0.01;
+                this.controls.noFly = false;
+                this.controls.lookVertical = false;
 
 
+                this.hlight = new THREE.AmbientLight(0xffffff, 3);;
+                this.scene.add(this.hlight);
+                let loader = new GLTFLoader();
+                loader.load("/ShowRoom121122.glb", (gltf) => {
+
+
+                    const self = this;
+                    gltf.scene.traverse(function (child) {
+
+                        if (child.isMesh) {
+
+                            if (child.name == "navMesh_1") {
+
+                                self.navmesh = child;
+                                // self.sceneMeshes.push(child);
+                                child.material.transparent = true;
+                                child.material.opacity = 0.3;
+
+                            }
+                            else if (child.name == "wall_1" || child.name == "wall_2" || child.name == "wall_3") {
+                                self.navmesh = child;
+                                self.sceneMeshes.push(child);
+                            }
+                            else {
+                                child.castShadow = false;
+                                child.receiveShadow = true;
+                            }
+                            self.scene.add(gltf.scene);
+                        }
+                    })
+                });
+
+            },
+            computeDistance: function () {
                 const self = this;
-                gltf.scene.traverse(function (child) {
 
-                    if (child.isMesh) {
+                this.sceneMeshes.forEach(function (mesh) {
+                    self.distanceToCamera(self.camera.position, mesh)
+                })
+            },
 
-                        if (child.name == "navMesh_1") {
+            distanceToCamera: function (cam, mesh) {
+                // let camPoints = [{ x: cam.x + 1, y: cam.y, z: cam.z + 1 }, { x: cam.x - 1, y: cam.y, z: cam.z - 1 }, { x: cam.x + 1, y: cam.y, z: cam.z - 1 }, { x: cam.x - 1, y: cam.y, z: cam.z + 1 }]
+                // const box1 = new THREE.Box3().setFromPoints(camPoints);
+                const box2 = new THREE.Box3().setFromObject(mesh);
+                if (box2.distanceToPoint(cam) > 0) {
+                    this.raycaster.setFromCamera(this.mouse, this.camera);
+                    var collisionResults = this.raycaster.intersectObjects(this.sceneMeshes, true);
+                    if (collisionResults.length > 0 && collisionResults[0].distance < 2) {
+                        console.log("distanceToCamera bigger than 0");
+                        var point = collisionResults[0].point;
+                        var dir = new THREE.Vector3();
+                        console.log(point)
+                        dir.subVectors(this.camera.position, point).normalize();
+                        this.camera.position.addScaledVector(dir, -0.4);
+                    }
+                }
 
-                            self.navmesh = child;
-                            // self.sceneMeshes.push(child);
-                            child.material.transparent = true;
-                            child.material.opacity = 0.3;
+                return box2.distanceToPoint(cam);
+            },
 
-                        }
-                        else if (child.name == "wall_1" || child.name == "wall_2" || child.name == "wall_3") {
-                            self.navmesh = child;
-                            self.sceneMeshes.push(child);
-                        }
-                        else {
-                            child.castShadow = false;
-                            child.receiveShadow = true;
-                        }
-                        self.scene.add(gltf.scene);
+            //calculate the collision of two objects
+            collision: function (object1, object2) {
+                const box1 = new THREE.Box3().setFromObject(object1);
+                const box2 = new THREE.Box3().setFromObject(object2);
+                return box1.intersectsBox(box2);
+            },
+
+            //calculate the distance between two objects
+            distance: function (object1, object2) {
+                const box1 = new THREE.Box3().setFromObject(object1);
+                const box2 = new THREE.Box3().setFromObject(object2);
+                return box1.distanceToPoint(box2);
+            },
+
+            //detect the collision of the player with the scene
+            detectCollision: function () {
+                const self = this;
+                this.sceneMeshes.forEach(function (mesh) {
+                    if (self.collision(self.controls.getObject(), mesh)) {
+                        console.log("collision");
                     }
                 })
-            });
-
-        },
-        computeDistance: function () {
-            const self = this;
-
-            this.sceneMeshes.forEach(function (mesh) {
-                self.distanceToCamera(self.camera.position, mesh)
-            })
-        },
-
-        distanceToCamera: function (cam, mesh) {
-            // let camPoints = [{ x: cam.x + 1, y: cam.y, z: cam.z + 1 }, { x: cam.x - 1, y: cam.y, z: cam.z - 1 }, { x: cam.x + 1, y: cam.y, z: cam.z - 1 }, { x: cam.x - 1, y: cam.y, z: cam.z + 1 }]
-            // const box1 = new THREE.Box3().setFromPoints(camPoints);
-            const box2 = new THREE.Box3().setFromObject(mesh);
-            if (box2.distanceToPoint(cam) > 0) {
+            },
+            //compute the object which is in front of the player
+            computeIntersections: function () {
                 this.raycaster.setFromCamera(this.mouse, this.camera);
-                var collisionResults = this.raycaster.intersectObjects(this.sceneMeshes, true);
-                if (collisionResults.length > 0 && collisionResults[0].distance < 2) {
-                    console.log("distanceToCamera bigger than 0");
-                    var point = collisionResults[0].point;
-                    var dir = new THREE.Vector3();
-                    console.log(point)
-                    dir.subVectors(this.camera.position, point).normalize();
-                    this.camera.position.addScaledVector(dir, -0.4);
+                const intersects = this.raycaster.intersectObjects(this.sceneMeshes);
+                if (intersects.length > 0) {
+                    console.log(intersects[0].object.name);
                 }
-            }
+            },
 
-            return box2.distanceToPoint(cam);
-        },
-
-        //calculate the collision of two objects
-        collision: function (object1, object2) {
-            const box1 = new THREE.Box3().setFromObject(object1);
-            const box2 = new THREE.Box3().setFromObject(object2);
-            return box1.intersectsBox(box2);
-        },
-
-        //calculate the distance between two objects
-        distance: function (object1, object2) {
-            const box1 = new THREE.Box3().setFromObject(object1);
-            const box2 = new THREE.Box3().setFromObject(object2);
-            return box1.distanceToPoint(box2);
-        },
-
-        //detect the collision of the player with the scene
-        detectCollision: function () {
-            const self = this;
-            this.sceneMeshes.forEach(function (mesh) {
-                if (self.collision(self.controls.getObject(), mesh)) {
-                    console.log("collision");
-                }
-            })
-        },
-        //compute the object which is in front of the player
-        computeIntersections: function () {
-            this.raycaster.setFromCamera(this.mouse, this.camera);
-            const intersects = this.raycaster.intersectObjects(this.sceneMeshes);
-            if (intersects.length > 0) {
-                console.log(intersects[0].object.name);
-            }
-        },
-
-        //compute the object which collides with the player
-        computeCollisions: function () {
-            const self = this;
-            this.sceneMeshes.forEach(function (mesh) {
-                if (self.collision(self.controls.getObject(), mesh)) {
-                    console.log(mesh.name);
-                }
-            })
-        },
-
-        raycast: function (e) {
-            debugger
-            var collisionResults = this.raycaster.intersectObjects(this.sceneMeshes, true);
-            if (collisionResults.length > 0 && collisionResults[0].distance < 3) {
-                //stop the movement
-                this.controls.moveForward = false;
-                console.log(collisionResults[0].object.name);
-                debugger
-            }
-            //// debugger
-            //let mousex = 0;
-            //this.mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
-            //this.mouse.y = - (e.clientY / window.innerHeight) * 2 + 1;
-            //this.raycaster.ray.origin.copy(this.controls.object.position);
-            //// this.camera.getWorldDirection( this.raycaster.ray.direction );
-
-            ////2. set the picking ray from the camera position and mouse coordinates
-            //this.raycaster.setFromCamera(this.mouse, this.camera);
-            //console.log(this.controls.object.position)
-            ////3. compute intersections
-            //const intersects = this.raycaster.intersectObjects(this.sceneMeshes);
-
-            //if (intersects.length > 0) {
-            //    if (intersects[0].distance > 5)
-            //        this.camera.lookAt(this.mouse);
-            //    console.log(intersects[0])
-            //}
-            //else {
-
-            //}
-
-        },
-        raycastLock: function () {
-            this.raycaster.setFromCamera(this.mouse, this.camera);
-            var collisionResults = this.raycaster.intersectObjects(this.sceneMeshes, true);
-            // this.computeDistance();
-            // if (collisionResults.length > 0 && collisionResults[0].distance < 3) {
-            //     var point = collisionResults[0].point;
-            //     var dir = new THREE.Vector3();
-            //     console.log(point)
-            //     dir.subVectors(this.camera.position, point).normalize();
-            //     this.camera.position.addScaledVector(dir, 0.4);
-            // }
-
-            if (collisionResults.length > 0 && collisionResults[0].distance < 3) {
-                var point = collisionResults[0].point;
-
-                var lng = collisionResults.length;
-                var biggestDistance = collisionResults[lng - 1].distance
-                var smallestDistance = collisionResults[0].distance
-
-
-                var dir = new THREE.Vector3();
-                var subCam = new THREE.Vector3();
-                var subCamPoint = new THREE.Vector3();
-                var wrldDirection = new THREE.Vector3();
-                this.camera.getWorldDirection(wrldDirection);
-                subCam.subVectors(this.camera.position, wrldDirection).normalize();
-                subCamPoint.subVectors(this.camera.position, point);
-                dir.subVectors(this.camera.position, point).normalize();
-                var angle = subCam.angleTo(dir);
-                // var dotResult = subCamPoint.dot(point);
-                // var angelsubCamPoint = subCamPoint.angleTo(this.camera.position);
-
-                if (lng > 5 && (biggestDistance - smallestDistance > 10) && subCamPoint.length() >= 1) {
-                    console.log(point);
-                    console.log(this.camera.position);
-                    console.log(wrldDirection);
-                    this.camera.position.addScaledVector(dir, 0.3);
-                    return
-                }
-                else if (angle > 1.60) {
-                    console.log(point);
-                    console.log(this.camera.position);
-                    console.log(wrldDirection);
-                    this.camera.position.addScaledVector(dir, 0.3);
-                }
-
-                else {
-
-                    if (biggestDistance - smallestDistance < 5)
-                        this.camera.position.addScaledVector(dir, 0.3);
-                    else {
-                        console.log(point);
-                        console.log(this.camera.position);
-                        console.log(wrldDirection);
-                        this.camera.position.addScaledVector(dir, -0.3);
+            //compute the object which collides with the player
+            computeCollisions: function () {
+                const self = this;
+                this.sceneMeshes.forEach(function (mesh) {
+                    if (self.collision(self.controls.getObject(), mesh)) {
+                        console.log(mesh.name);
                     }
+                })
+            },
 
+            raycast: function (e) {
+                debugger
+                var collisionResults = this.raycaster.intersectObjects(this.sceneMeshes, true);
+                if (collisionResults.length > 0 && collisionResults[0].distance < 3) {
+                    //stop the movement
+                    this.controls.moveForward = false;
+                    console.log(collisionResults[0].object.name);
+                    debugger
                 }
+                //// debugger
+                //let mousex = 0;
+                //this.mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+                //this.mouse.y = - (e.clientY / window.innerHeight) * 2 + 1;
+                //this.raycaster.ray.origin.copy(this.controls.object.position);
+                //// this.camera.getWorldDirection( this.raycaster.ray.direction );
 
+                ////2. set the picking ray from the camera position and mouse coordinates
+                //this.raycaster.setFromCamera(this.mouse, this.camera);
+                //console.log(this.controls.object.position)
+                ////3. compute intersections
+                //const intersects = this.raycaster.intersectObjects(this.sceneMeshes);
+
+                //if (intersects.length > 0) {
+                //    if (intersects[0].distance > 5)
+                //        this.camera.lookAt(this.mouse);
+                //    console.log(intersects[0])
+                //}
+                //else {
+
+                //}
+
+            },
+
+            //method to detect collision between the player and the scene and stop the movement
+            raycastLock: function () {
+                var c = this.camera.position
+                var rc1 = new THREE.Raycaster(c, new THREE.Vector3(1, 0, 0)).intersectObjects(this.sceneMeshes, false)
+                var rc2 = new THREE.Raycaster(c, new THREE.Vector3(0, 0, 1)).intersectObjects(this.sceneMeshes, false)
+                var rc3 = new THREE.Raycaster(c, new THREE.Vector3(-1, 0, 0)).intersectObjects(this.sceneMeshes, false)
+                var rc4 = new THREE.Raycaster(c, new THREE.Vector3(0, 0, -1)).intersectObjects(this.sceneMeshes, false) 
+                var r1 = rc1.length > 0 ? rc1[0] : null;
+                var r2 = rc2.length > 0 ? rc2[0] : null;
+                var r3 = rc3.length > 0 ? rc3[0] : null;
+                var r4 = rc4.length > 0 ? rc4[0] : null;
+                var arr = [];
+                if (r1) arr.push(r1);
+                if (r2) arr.push(r2);
+                if (r3) arr.push(r3);
+                if (r4) arr.push(r4);
+                var rSorted = arr.sort((a, b) => { return a.distance - b.distance })
+                if (rSorted.length > 0 && rSorted[0].distance < 2) {
+                    var r = rSorted[0]
+                    var d = new THREE.Vector3()
+                    d.subVectors(c, r.point).normalize(); 
+                    this.camera.position.addScaledVector(d, 0.3)
+                }                
+            },
+            animate: function () {
+                requestAnimationFrame(this.animate)
+                this.renderer.render(this.scene, this.camera);
+                this.raycastLock();
+                // this.renderer.domElement.addEventListener( 'click', this.raycast,false );
+                this.controls.update(0.03); // das muss glaub ich abhängig von der Zeit sein(lockedControler)
             }
-
-            // if (collisionResults.length > 0 && collisionResults[0].distance < 3) {
-            //     var point = collisionResults[0].point;
-            //     var dir = new THREE.Vector3();
-
-            //     var projectVector = new THREE.Vector3(this.camera.position.x, this.camera.position.y, this.camera.position.z);
-            //     projectVector.normalize();
-            //     var subPoint = new THREE.Vector3();
-            //     subPoint.subVectors(point, this.camera.position).normalize();
-            //     dir.subVectors(this.camera.position, point).normalize();
-            //     if (projectVector.dot(subPoint) > 0) {
-            //         console.log(point)
-            //         this.camera.position.addScaledVector(dir, .5);
-            //     }
-
-            //     else {
-            //         console.log(point)
-            //         this.camera.position.addScaledVector(dir, -0.5);
-            //     }
-
-            // }
         },
-        animate: function () {
-            requestAnimationFrame(this.animate)
-            this.renderer.render(this.scene, this.camera);
-            this.raycastLock();
-            // this.renderer.domElement.addEventListener( 'click', this.raycast,false );
-            this.controls.update(0.03); // das muss glaub ich abhängig von der Zeit sein(lockedControler)
+        mounted() {
+
+
+        },
+        created() {
+            this.init();
+            this.animate();
         }
-    },
-    mounted () {
-
-
-    },
-    created () {
-        this.init();
-        this.animate();
     }
-}
 </script>
