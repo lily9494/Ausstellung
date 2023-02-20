@@ -193,15 +193,13 @@
 
                 //}
 
-            },
-
-            //method to detect collision between the player and the scene and stop the movement
+            },//method to detect collision between the player and the scene and stop the movement
             raycastLock: function () {
                 var c = this.camera.position
                 var rc1 = new THREE.Raycaster(c, new THREE.Vector3(1, 0, 0)).intersectObjects(this.sceneMeshes, false)
                 var rc2 = new THREE.Raycaster(c, new THREE.Vector3(0, 0, 1)).intersectObjects(this.sceneMeshes, false)
                 var rc3 = new THREE.Raycaster(c, new THREE.Vector3(-1, 0, 0)).intersectObjects(this.sceneMeshes, false)
-                var rc4 = new THREE.Raycaster(c, new THREE.Vector3(0, 0, -1)).intersectObjects(this.sceneMeshes, false) 
+                var rc4 = new THREE.Raycaster(c, new THREE.Vector3(0, 0, -1)).intersectObjects(this.sceneMeshes, false)
                 var r1 = rc1.length > 0 ? rc1[0] : null;
                 var r2 = rc2.length > 0 ? rc2[0] : null;
                 var r3 = rc3.length > 0 ? rc3[0] : null;
@@ -215,9 +213,9 @@
                 if (rSorted.length > 0 && rSorted[0].distance < 2) {
                     var r = rSorted[0]
                     var d = new THREE.Vector3()
-                    d.subVectors(c, r.point).normalize(); 
+                    d.subVectors(c, r.point).normalize();
                     this.camera.position.addScaledVector(d, 0.3)
-                }                
+                }
             },
             animate: function () {
                 requestAnimationFrame(this.animate)
