@@ -2,9 +2,7 @@
   "ExpandedNodes": [
     "",
     "\\src",
-    "\\src\\components",
-    "\\src\\scripts"
+    "\\src\\components"
   ],
-  "SelectedNode": "\\src\\scripts\\firstPerson.js",
   "PreviewInSolutionExplorer": false
 }
