@@ -1,6 +1,6 @@
 <template>
 
-  <exhibition msg="Virtuel Museum" />
+  <exhibition msg="Virtuelles Museum" />
 </template>
 
 <script>

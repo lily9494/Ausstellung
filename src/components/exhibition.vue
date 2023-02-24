@@ -24,6 +24,7 @@
                 navmesh: new THREE.Object3D(),
                 sceneMeshes: [],
                 collides: false,
+                oldPosition: null
             }
 
         },
@@ -195,26 +196,21 @@
 
             },//method to detect collision between the player and the scene and stop the movement
             raycastLock: function () {
-                var c = this.camera.position
-                var rc1 = new THREE.Raycaster(c, new THREE.Vector3(1, 0, 0)).intersectObjects(this.sceneMeshes, false)
-                var rc2 = new THREE.Raycaster(c, new THREE.Vector3(0, 0, 1)).intersectObjects(this.sceneMeshes, false)
-                var rc3 = new THREE.Raycaster(c, new THREE.Vector3(-1, 0, 0)).intersectObjects(this.sceneMeshes, false)
-                var rc4 = new THREE.Raycaster(c, new THREE.Vector3(0, 0, -1)).intersectObjects(this.sceneMeshes, false)
-                var r1 = rc1.length > 0 ? rc1[0] : null;
-                var r2 = rc2.length > 0 ? rc2[0] : null;
-                var r3 = rc3.length > 0 ? rc3[0] : null;
-                var r4 = rc4.length > 0 ? rc4[0] : null;
-                var arr = [];
-                if (r1) arr.push(r1);
-                if (r2) arr.push(r2);
-                if (r3) arr.push(r3);
-                if (r4) arr.push(r4);
-                var rSorted = arr.sort((a, b) => { return a.distance - b.distance })
-                if (rSorted.length > 0 && rSorted[0].distance < 2) {
-                    var r = rSorted[0]
-                    var d = new THREE.Vector3()
-                    d.subVectors(c, r.point).normalize();
-                    this.camera.position.addScaledVector(d, 0.3)
+                var camPosition = this.camera.position
+                if (!this.oldPosition) {
+                    this.oldPosition = camPosition.clone();
+                    return;
+                }
+                var direction = new THREE.Vector3();
+                direction.subVectors(camPosition, this.oldPosition).normalize(); 
+                this.oldPosition = camPosition.clone();
+                var intersectedObjects = new THREE.Raycaster(camPosition, direction).intersectObjects(this.sceneMeshes, false)
+                 
+                if (intersectedObjects.length > 0 && intersectedObjects[0].distance < 2) {
+                    var obj = intersectedObjects[0]
+                    var moveV = new THREE.Vector3()
+                    moveV.subVectors(camPosition, obj.point).normalize();
+                    this.camera.position.addScaledVector(moveV, 0.3)
                 }
             },
             animate: function () {
