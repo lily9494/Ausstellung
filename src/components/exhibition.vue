@@ -16,7 +16,7 @@
         name: "threejs",
         data() {
             return {
-                mouse: { x: 0, y: 0 },
+                mouse: new THREE.Vector2(),
                 topics: jsonData,
                 raycaster: new THREE.Raycaster(),
                 camera: new THREE.PerspectiveCamera(
@@ -54,6 +54,7 @@
                 this.renderer.physicallyCorrectLights = true;
 
                 document.body.appendChild(this.renderer.domElement);
+                this.renderer.domElement.onclick = this.onClick;
 
                 this.lockControl = new PointerLockControls(
                     this.camera,
@@ -122,6 +123,30 @@
                     });
                 });
             },
+            onClick: function (event) {
+                // the following line would stop any other event handler from firing
+                event.preventDefault();
+                
+                // calculate pointer position in normalized device coordinates
+                // (-1 to +1) for both components
+                this.mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+                this.mouse.y = - (event.clientY / window.innerHeight) * 2 + 1;
+                
+                // update the picking ray with the camera and pointer position
+                this.raycaster.setFromCamera(this.mouse, this.camera);
+
+                // create an array containing all objects in the scene with which the ray intersects
+                var intersects = this.raycaster.intersectObjects(this.artMeshes, true);
+
+                // if there is one (or more) intersections, the intersection
+                // with the lowest distance
+                const obj = intersects.length > 0 ? intersects[0] : null;
+                if (obj) {
+                    alert(obj.object.userData.topic.title)
+                    //console.log(obj);
+                }
+            },
+
 
 
 
