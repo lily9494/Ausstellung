@@ -37,10 +37,11 @@ export default {
   methods: {
     init: function () {
       this.scene = new THREE.Scene();
-      this.scene.background = new THREE.Color(0xdddddd);
-      // this.pathfinder = new Pathfinding();
 
-      // this.camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 1, 5000);
+      this.scene.background = new THREE.CubeTextureLoader()
+        .setPath("/SkyBox/")
+        .load(["px.jpg", "nx.jpg", "py.jpg", "ny.jpg", "pz.jpg", "nz.jpg"]);
+
       this.camera.rotation.y = (10 / 180) * Math.PI;
       this.camera.position.x = 15;
       this.camera.position.y = 3;
@@ -72,6 +73,10 @@ export default {
       this.hlight = new THREE.AmbientLight(0xffffff, 3);
       this.scene.add(this.hlight);
 
+      let pointLight = new THREE.PointLight(0xffffff, 2);
+      this.scene.add(pointLight);
+      const light = new THREE.HemisphereLight(0xffffbb, 0x080820, 1);
+      this.scene.add(light);
       let loader = new GLTFLoader();
       loader.load("/Gallery.glb", (gltf) => {
         const self = this;
@@ -101,11 +106,6 @@ export default {
               child.userData.topic = topic;
               // Collect image-meshes for further interaction
               self.artMeshes.push(child);
-            } else if (child.name == "navMesh_1") {
-              self.navmesh = child;
-              // self.sceneMeshes.push(child);
-              child.material.transparent = true;
-              child.material.opacity = 0.3;
             } else if (
               child.name == "wall_1" ||
               child.name == "wall_2" ||
@@ -113,10 +113,22 @@ export default {
             ) {
               self.navmesh = child;
               self.sceneMeshes.push(child);
-            } else {
-              child.castShadow = false;
-              child.receiveShadow = true;
+            } else if (child.name == "floor") {
+              child.material.opacity = 0.9;
+            } else if (child.name == "ceiling") {
+              child.material.color.r = 0.95;
+              child.material.color.g = 0.95;
+              child.material.color.b = 0.95;
             }
+          } else if (child.name == "windows") {
+            child.children[1].material.visible = false;
+          } else if (
+            child.name.startsWith("bench_") ||
+            child.name.startsWith("flower_")
+          ) {
+            child.children[1].castShadow = true;
+            child.children[1].receiveShadow = true;
+            child.children[1].renderOrder = 1;
           }
           self.scene.add(gltf.scene);
         });
