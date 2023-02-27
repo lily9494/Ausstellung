@@ -37,11 +37,21 @@ export default {
   methods: {
     init: function () {
       this.scene = new THREE.Scene();
+      const path = "/SkyBox/";
+      const format = ".jpg";
+      const urls = [
+        path + "px" + format,
+        path + "nx" + format,
+        path + "py" + format,
+        path + "ny" + format,
+        path + "pz" + format,
+        path + "nz" + format,
+      ];
 
-      this.scene.background = new THREE.CubeTextureLoader()
-        .setPath("/SkyBox/")
-        .load(["px.jpg", "nx.jpg", "py.jpg", "ny.jpg", "pz.jpg", "nz.jpg"]);
-
+      const reflectionCube = new THREE.CubeTextureLoader().load(urls);
+      const refractionCube = new THREE.CubeTextureLoader().load(urls);
+      refractionCube.mapping = THREE.CubeRefractionMapping;
+      this.scene.background = reflectionCube;
       this.camera.rotation.y = (10 / 180) * Math.PI;
       this.camera.position.x = 15;
       this.camera.position.y = 3;
