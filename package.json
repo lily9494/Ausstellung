@@ -10,7 +10,6 @@
     "core-js": "^3.28.0",
     "three": "^0.146.0",
     "three-pathfinding": "^1.2.0",
-    "troika-three-text": "^0.47.1",
     "vue": "^3.2.47"
   },
   "devDependencies": {

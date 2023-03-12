@@ -8,7 +8,6 @@
 import * as THREE from "three";
 import jsonData from "../../public/ExportSimple.json";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
-import { PointerLockControls } from "../scripts/pointerLocksControl.js";
 import { FirstPersonControls } from "../scripts/firstPerson";
 
 export default {
@@ -37,6 +36,8 @@ export default {
   methods: {
     init: function () {
       this.scene = new THREE.Scene();
+
+      //Sky as background
       const path = "/SkyBox/";
       const format = ".jpg";
       const urls = [
@@ -56,8 +57,7 @@ export default {
       this.camera.position.x = 15;
       this.camera.position.y = 3;
       this.camera.position.z = 20;
-      // this.camera.lookAt(this.scene.position);
-
+      //end of sky
       this.renderer = new THREE.WebGLRenderer({ antialias: true });
       this.renderer.setSize(window.innerWidth, window.innerHeight);
       this.renderer.outputEncoding = THREE.sRGBEncoding;
@@ -65,11 +65,6 @@ export default {
 
       document.body.appendChild(this.renderer.domElement);
       this.renderer.domElement.onclick = this.onClick;
-
-      this.lockControl = new PointerLockControls(
-        this.camera,
-        this.renderer.domElement
-      );
 
       this.controls = new FirstPersonControls(
         this.camera,
@@ -83,10 +78,6 @@ export default {
       this.hlight = new THREE.AmbientLight(0xffffff, 3);
       this.scene.add(this.hlight);
 
-      let pointLight = new THREE.PointLight(0xffffff, 2);
-      this.scene.add(pointLight);
-      const light = new THREE.HemisphereLight(0xffffbb, 0x080820, 1);
-      this.scene.add(light);
       let loader = new GLTFLoader();
       loader.load("/Gallery.glb", (gltf) => {
         const self = this;
@@ -95,6 +86,7 @@ export default {
         const count = topics.length;
         gltf.scene.traverse(function (child) {
           if (child.isMesh) {
+            child.castShadow = true;
             if (child.name && child.name.startsWith("art_")) {
               // Rolling because there are to few images
               const topic = topics[n % count];
@@ -123,14 +115,9 @@ export default {
             ) {
               self.navmesh = child;
               self.sceneMeshes.push(child);
-            } else if (child.name == "floor") {
-              child.material.opacity = 0.9;
-            } else if (child.name == "ceiling") {
-              child.material.color.r = 0.95;
-              child.material.color.g = 0.95;
-              child.material.color.b = 0.95;
             }
           } else if (child.name == "windows") {
+            //sky doesn't appear very well beacuse of light and window texture, so...
             child.children[1].material.visible = false;
           } else if (
             child.name.startsWith("bench_") ||
@@ -164,80 +151,9 @@ export default {
       const obj = intersects.length > 0 ? intersects[0] : null;
       if (obj) {
         alert(obj.object.userData.topic.title);
-        //console.log(obj);
       }
     },
 
-    computeDistance: function () {
-      const self = this;
-
-      this.sceneMeshes.forEach(function (mesh) {
-        self.distanceToCamera(self.camera.position, mesh);
-      });
-    },
-
-    distanceToCamera: function (cam, mesh) {
-      const box2 = new THREE.Box3().setFromObject(mesh);
-      if (box2.distanceToPoint(cam) > 0) {
-        this.raycaster.setFromCamera(this.mouse, this.camera);
-        var collisionResults = this.raycaster.intersectObjects(
-          this.sceneMeshes,
-          true
-        );
-        if (collisionResults.length > 0 && collisionResults[0].distance < 2) {
-          console.log("distanceToCamera bigger than 0");
-          var point = collisionResults[0].point;
-          var dir = new THREE.Vector3();
-          console.log(point);
-          dir.subVectors(this.camera.position, point).normalize();
-          this.camera.position.addScaledVector(dir, -0.4);
-        }
-      }
-
-      return box2.distanceToPoint(cam);
-    },
-
-    //calculate the collision of two objects
-    collision: function (object1, object2) {
-      const box1 = new THREE.Box3().setFromObject(object1);
-      const box2 = new THREE.Box3().setFromObject(object2);
-      return box1.intersectsBox(box2);
-    },
-
-    //calculate the distance between two objects
-    distance: function (object1, object2) {
-      const box1 = new THREE.Box3().setFromObject(object1);
-      const box2 = new THREE.Box3().setFromObject(object2);
-      return box1.distanceToPoint(box2);
-    },
-
-    //detect the collision of the player with the scene
-    detectCollision: function () {
-      const self = this;
-      this.sceneMeshes.forEach(function (mesh) {
-        if (self.collision(self.controls.getObject(), mesh)) {
-          console.log("collision");
-        }
-      });
-    },
-    //compute the object which is in front of the player
-    computeIntersections: function () {
-      this.raycaster.setFromCamera(this.mouse, this.camera);
-      const intersects = this.raycaster.intersectObjects(this.sceneMeshes);
-      if (intersects.length > 0) {
-        console.log(intersects[0].object.name);
-      }
-    },
-
-    //compute the object which collides with the player
-    computeCollisions: function () {
-      const self = this;
-      this.sceneMeshes.forEach(function (mesh) {
-        if (self.collision(self.controls.getObject(), mesh)) {
-          console.log(mesh.name);
-        }
-      });
-    },
     //method to detect collision between the player and the scene and stop the movement
     raycastLock: function () {
       var camPosition = this.camera.position;
@@ -257,7 +173,7 @@ export default {
         var obj = intersectedObjects[0];
         var moveV = new THREE.Vector3();
         moveV.subVectors(camPosition, obj.point).normalize();
-        this.camera.position.addScaledVector(moveV, 0.3);
+        this.camera.position.addScaledVector(moveV, 0.4);
       }
     },
     animate: function () {
