@@ -13,11 +13,12 @@ class FirstPersonControls {
 
     this.enabled = true;
 
-    this.movementSpeed = 1.0;
-    this.lookSpeed = 0.005;
+    this.movementSpeed = 5.0;
+    this.lookSpeed = 0.01;
 
-    this.lookVertical = true;
+    this.lookVertical = false;
     this.autoForward = false;
+    this.noFly = false;
 
     this.activeLook = true;
 
