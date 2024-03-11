@@ -49,7 +49,7 @@ export default {
         this.renderer.domElement
       );
       //ambientLight
-      this.hlight = new THREE.AmbientLight(0xffffff, 3);
+      this.hlight = new THREE.AmbientLight(0xffffff, 0.5);
       this.scene.add(this.hlight);
 
       this.loader = new Loader(this.scene);
